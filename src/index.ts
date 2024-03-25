@@ -1,6 +1,6 @@
 import 'express-async-errors';
 import express from 'express';
-import { errorMiddleware } from './config/middlewares/errorMiddleware';
+import { errorMiddleware } from './middlewares/errorMiddleware';
 import routes from './routes';
 import { AppDataSource } from './data-source';
 import { IncomingMessage, Server, ServerResponse } from 'http';
