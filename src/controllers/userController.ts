@@ -10,6 +10,9 @@ import jwt from 'jsonwebtoken';
 import deleteImage from '../services/deleteImage';
 import { employeeRepository } from '../repositories/employeeRepository';
 import { RequestWhitEntity } from '../interfaces/RequestWhitEntity';
+import fs from 'fs/promises';
+import Handlebars from 'handlebars';
+import { send } from '../utils/emailSender';
 
 export class UserController {
   async store(req: Request, res: Response) {
@@ -54,6 +57,17 @@ export class UserController {
       const savedUser: User = userRepository.create(newUser);
       await userRepository.save(savedUser);
 
+      //send email
+      const file: Buffer = await fs.readFile('src/templates/registrationEmail.html');
+
+      const compiler: HandlebarsTemplateDelegate<any> = Handlebars.compile(file.toString());
+
+      const htmlMail = compiler({
+        nameUser: name
+      });
+
+      send(`${name} <${email}>`, 'Thank You for Creating an Account', htmlMail);
+
       return res.status(201).json({ ...newUser });
     } else {
       const encryptedPassword = await bcrypt.hash(password, 10);
@@ -67,6 +81,17 @@ export class UserController {
       };
       const savedUser: User = userRepository.create(newUser);
       await userRepository.save(savedUser);
+
+      //send email
+      const file: Buffer = await fs.readFile('src/templates/registrationEmail.html');
+
+      const compiler: HandlebarsTemplateDelegate<any> = Handlebars.compile(file.toString());
+
+      const htmlMail = compiler({
+        nameUser: name
+      });
+
+      send(`${name} <${email}>`, 'Thank You for Creating an Account', htmlMail);
 
       return res.status(201).json({ ...newUser });
     }
