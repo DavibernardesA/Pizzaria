@@ -11,6 +11,7 @@ import deleteImage from '../services/deleteImage';
 import { userRepository } from '../repositories/userRepository';
 import { envChecker } from '../utils/envChecker';
 import { RequestWhitEntity } from '../interfaces/RequestWhitEntity';
+import { Login } from '../DTO/Login';
 
 export class EmployeeController {
   async index(_: Request, res: Response): Promise<Response<any, Record<string, any>>> {
@@ -40,7 +41,7 @@ export class EmployeeController {
     return res.status(200).json(employee);
   }
 
-  async store(req: Request, res: Response): Promise<Response<any, Record<string, any>>> {
+  async store(req: Request, res: Response): Promise<Response<Employee>> {
     const { name, email, password } = req.body;
     let avatar: Express.Multer.File | undefined = req.file;
 
@@ -81,7 +82,7 @@ export class EmployeeController {
       const savedEmployee: Employee = employeeRepository.create(newEmployee);
       await employeeRepository.save(savedEmployee);
 
-      return res.status(201).json({ ...newEmployee });
+      return res.status(201).json(savedEmployee);
     } else {
       const encryptedPassword = await bcrypt.hash(password, 10);
 
@@ -94,11 +95,11 @@ export class EmployeeController {
       const savedEmployee: Employee = employeeRepository.create(newEmployee);
       await employeeRepository.save(savedEmployee);
 
-      return res.status(201).json({ ...newEmployee });
+      return res.status(201).json(savedEmployee);
     }
   }
 
-  async login(req: Request, res: Response): Promise<Response<any, Record<string, any>>> {
+  async login(req: Request, res: Response): Promise<Response<Login>> {
     const { email, password } = req.body;
 
     if (!email || !password) {

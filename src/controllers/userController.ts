@@ -13,9 +13,10 @@ import { RequestWhitEntity } from '../interfaces/RequestWhitEntity';
 import fs from 'fs/promises';
 import Handlebars from 'handlebars';
 import { send } from '../utils/emailSender';
+import { Login } from '../DTO/Login';
 
 export class UserController {
-  async store(req: Request, res: Response) {
+  async store(req: Request, res: Response): Promise<Response<User>> {
     const { name, email, password } = req.body;
     let avatar: Express.Multer.File | undefined = req.file;
 
@@ -96,7 +97,7 @@ export class UserController {
       return res.status(201).json({ ...newUser });
     }
   }
-  async show(req: Request, res: Response): Promise<Response<any, Record<string, any>>> {
+  async show(req: Request, res: Response): Promise<Response<User>> {
     const { id } = req.params;
 
     const userId: number = parseInt(id);
@@ -113,7 +114,7 @@ export class UserController {
     return res.status(200).json(user);
   }
 
-  async login(req: Request, res: Response) {
+  async login(req: Request, res: Response): Promise<Response<Login>> {
     const { email, password } = req.body;
 
     if (!email || !password) {
@@ -149,7 +150,7 @@ export class UserController {
 
   async update(req: Request, res: Response) {}
 
-  async destroy(req: RequestWhitEntity, res: Response) {
+  async destroy(req: RequestWhitEntity, res: Response): Promise<Response<any, Record<string, any>>> {
     const { id } = req.params;
 
     const userId: number = parseInt(id);
