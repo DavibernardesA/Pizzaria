@@ -20,8 +20,8 @@ routes.delete('/employees/:id', loggedInEmployee, employeeController.destroy);
 //users
 routes.put('/users', multer.single('profile_image'), userController.store);
 routes.post('/users', userController.login);
-routes.get('/users/:id', loggedInUser, multer.single('profile_image'), userController.show);
-routes.put('/users/:id', loggedInUser, userController.update);
+routes.get('/users/:id', loggedInUser, userController.show);
+routes.put('/users/:id', loggedInUser, multer.single('profile_image'), userController.update);
 routes.delete('/users/:id', loggedInUser, userController.destroy);
 
 export default routes;
