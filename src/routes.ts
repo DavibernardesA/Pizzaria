@@ -23,5 +23,6 @@ routes.post('/users', userController.login);
 routes.get('/users/:id', loggedInUser, userController.show);
 routes.put('/users/:id', loggedInUser, multer.single('profile_image'), userController.update);
 routes.delete('/users/:id', loggedInUser, userController.destroy);
+routes.post('/users/:id', loggedInUser, userController.create_order);
 
 export default routes;
