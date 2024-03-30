@@ -129,7 +129,42 @@ export class EmployeeController {
     return res.status(200).json({ employee: employeeData, token });
   }
 
-  async update(req: Request, res: Response) {}
+  async update(req: Request, res: Response) {
+    const { name, email, password, avatar, adress } = req.body;
+    const { id } = req.params;
+
+    if (!req.body || Object.keys(req.body).length === 0) {
+      throw new InvalidFormatError(chat.error400);
+    }
+
+    const employeeId: number = parseInt(id);
+
+    if (!id || !employeeId) {
+      throw new BadRequestError(chat.error400);
+    }
+
+    const employee: Employee | null = await employeeRepository.findOne({ where: { id: employeeId } });
+
+    if (!employee) {
+      throw new NotFoundError(chat.error404);
+    }
+
+    const employeeData: Partial<Employee> = {
+      name: name || employee.name,
+      email: email || employee.email,
+      password: password || employee.password,
+      avatar: avatar || employee.avatar
+    };
+
+    Object.assign(employee, employeeData);
+
+    if (employeeId !== employee.id) {
+      throw new UnauthorizedError(chat.error401);
+    }
+    await employeeRepository.save(employee);
+
+    return res.status(200).json(employee);
+  }
 
   async destroy(req: RequestWhitEntity, res: Response): Promise<Response<any, Record<string, any>>> {
     const { id } = req.params;
@@ -137,7 +172,7 @@ export class EmployeeController {
     const userId: number = parseInt(id);
 
     if (!id || isNaN(userId)) {
-      throw new InvalidFormatError(chat.error400);
+      throw new BadRequestError(chat.error400);
     }
 
     const employee: Employee | null = await employeeRepository.findOne({ where: { id: userId } });
