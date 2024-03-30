@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { BadRequestError, InvalidFormatError, NotFoundError, ServerError, UnauthorizedError } from '../helpers/api-error';
+import { BadRequestError, InvalidFormatError, NotFoundError, UnauthorizedError } from '../helpers/api-error';
 import chat from '../chat/statusMessage';
 import { s3Client } from '../services/aws';
 import { PutObjectCommand } from '@aws-sdk/client-s3';
@@ -11,7 +11,7 @@ import deleteImage from '../services/deleteImage';
 import { userRepository } from '../repositories/userRepository';
 import { envChecker } from '../utils/envChecker';
 import { RequestWhitEntity } from '../interfaces/RequestWhitEntity';
-import { Login } from '../DTO/Login';
+import { LoginEmployee } from '../DTO/Login';
 
 export class EmployeeController {
   async index(_: Request, res: Response): Promise<Response<any, Record<string, any>>> {
@@ -99,7 +99,7 @@ export class EmployeeController {
     }
   }
 
-  async login(req: Request, res: Response): Promise<Response<Login>> {
+  async login(req: Request, res: Response): Promise<Response<LoginEmployee>> {
     const { email, password } = req.body;
 
     if (!email || !password) {

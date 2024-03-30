@@ -13,7 +13,8 @@ import { RequestWhitEntity } from '../interfaces/RequestWhitEntity';
 import fs from 'fs/promises';
 import Handlebars from 'handlebars';
 import { send } from '../utils/emailSender';
-import { Login } from '../DTO/Login';
+import { LoginUser } from '../DTO/Login';
+import { envChecker } from '../utils/envChecker';
 
 export class UserController {
   async store(req: Request, res: Response): Promise<Response<User>> {
@@ -114,7 +115,7 @@ export class UserController {
     return res.status(200).json(user);
   }
 
-  async login(req: Request, res: Response): Promise<Response<Login>> {
+  async login(req: Request, res: Response): Promise<Response<LoginUser>> {
     const { email, password } = req.body;
 
     if (!email || !password) {
@@ -135,11 +136,7 @@ export class UserController {
       throw new InvalidFormatError(chat.error400);
     }
 
-    const jwtPass: string | undefined = process.env.JWT_PASS;
-
-    if (!jwtPass) {
-      throw new ServerError('JWT_PASS environment variable is not set');
-    }
+    const jwtPass: string | undefined = envChecker(process.env.JWT_PASS);
 
     const token = jwt.sign({ id: user.id }, jwtPass, { expiresIn: '8h' });
 
@@ -148,7 +145,39 @@ export class UserController {
     return res.status(200).json({ user: userData, token });
   }
 
-  async update(req: Request, res: Response) {}
+  async update(req: Request, res: Response): Promise<Response<User>> {
+    const { name, email, password, avatar, adress } = req.body;
+    const { id } = req.params;
+
+    if (!req.body || Object.keys(req.body).length === 0) {
+      throw new InvalidFormatError(chat.error400);
+    }
+
+    const userId: number = parseInt(id);
+
+    const user: User | null = await userRepository.findOne({ where: { id: userId } });
+
+    if (!user) {
+      throw new NotFoundError(chat.error404);
+    }
+
+    const userData: Partial<User> = {
+      name: name || user.name,
+      email: email || user.email,
+      password: password || user.password,
+      avatar: avatar || user.avatar,
+      adress: adress || user.avatar
+    };
+
+    Object.assign(user, userData);
+
+    if (userId !== user.id) {
+      throw new UnauthorizedError(chat.error401);
+    }
+    await userRepository.save(user);
+
+    return res.status(200).json(user);
+  }
 
   async destroy(req: RequestWhitEntity, res: Response): Promise<Response<any, Record<string, any>>> {
     const { id } = req.params;
