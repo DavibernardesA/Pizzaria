@@ -1,10 +1,10 @@
 import { MigrationInterface, QueryRunner, Table, TableForeignKey } from 'typeorm';
 
-export class Adress1711211634126 implements MigrationInterface {
+export class Addresses1711770801623 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.createTable(
       new Table({
-        name: 'adresses',
+        name: 'addresses',
         columns: [
           {
             name: 'id',
@@ -13,7 +13,8 @@ export class Adress1711211634126 implements MigrationInterface {
           },
           {
             name: 'user_id',
-            type: 'integer'
+            type: 'integer',
+            isNullable: true
           },
           {
             name: 'zipcode', // CEP (Código de Endereçamento Postal)
@@ -52,7 +53,7 @@ export class Adress1711211634126 implements MigrationInterface {
     );
 
     await queryRunner.createForeignKey(
-      'adresses',
+      'addresses',
       new TableForeignKey({
         columnNames: ['user_id'],
         referencedTableName: 'users',
@@ -62,6 +63,6 @@ export class Adress1711211634126 implements MigrationInterface {
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.dropTable('adresses');
+    await queryRunner.dropTable('addresses');
   }
 }

@@ -1,13 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToOne } from 'typeorm';
 import { User } from './User';
 
-@Entity()
-export class Adress {
+@Entity('addresses')
+export class Address {
   @PrimaryGeneratedColumn()
   id: number;
-
-  @Column()
-  userId: number;
 
   @Column()
   zipcode: string;
@@ -16,7 +13,7 @@ export class Adress {
   street: string;
 
   @Column({ nullable: true })
-  houseNumber: string;
+  house_number: string;
 
   @Column({ nullable: true })
   complement: string;
@@ -30,7 +27,7 @@ export class Adress {
   @Column()
   state: string;
 
-  @ManyToOne(() => User, user => user)
+  @OneToOne(() => User, user => user.address)
   @JoinColumn({ name: 'user_id' })
   user: User;
 }
