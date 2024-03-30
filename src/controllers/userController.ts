@@ -157,7 +157,7 @@ export class UserController {
 
     const user: User | null = await userRepository.findOne({ where: { id: userId } });
 
-    if (!user) {
+    if (!id || !user) {
       throw new NotFoundError(chat.error404);
     }
 
