@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { userRepository } from '../repositories/userRepository';
-import { BadRequestError, InvalidFormatError, NotFoundError, ServerError, UnauthorizedError } from '../helpers/api-error';
+import { BadRequestError, InvalidFormatError, NotFoundError, UnauthorizedError } from '../helpers/api-error';
 import chat from '../chat/statusMessage';
 import { User } from '../entities/User';
 import { s3Client } from '../services/aws';
@@ -9,12 +9,12 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import deleteImage from '../services/deleteImage';
 import { employeeRepository } from '../repositories/employeeRepository';
-import { RequestWhitEntity } from '../interfaces/RequestWhitEntity';
 import fs from 'fs/promises';
 import Handlebars from 'handlebars';
 import { send } from '../utils/emailSender';
 import { LoginUser } from '../DTO/Login';
 import { envChecker } from '../utils/envChecker';
+import { RequestWhitEntity } from '../interfaces/RequestWhitEntity';
 
 export class UserController {
   async store(req: Request, res: Response): Promise<Response<User>> {
@@ -28,7 +28,7 @@ export class UserController {
     const existingEmployee = await employeeRepository.findByEmail(email);
     const existingUser = await userRepository.findByEmail(email);
 
-    if (existingEmployee.length > 1 && existingUser.length > 1) {
+    if (existingEmployee.length > 0 || existingUser.length > 0) {
       throw new InvalidFormatError(chat.error400);
     }
 
@@ -38,7 +38,7 @@ export class UserController {
 
       await s3Client.send(
         new PutObjectCommand({
-          Bucket: process.env.KEY_NAME_BUCKET,
+          Bucket: process.env.KEY_NAME_BUCKET!,
           Key,
           Body: avatar.buffer,
           ContentType: avatar.mimetype
@@ -53,10 +53,10 @@ export class UserController {
         name,
         email,
         password: encryptedPassword,
-        avatar: s3URL,
-        adress: []
+        avatar: s3URL
       };
-      const savedUser: User = userRepository.create(newUser);
+
+      const savedUser: User = await userRepository.create(newUser);
       await userRepository.save(savedUser);
 
       //send email
@@ -70,7 +70,7 @@ export class UserController {
 
       send(`${name} <${email}>`, 'Thank You for Creating an Account', htmlMail);
 
-      return res.status(201).json({ ...newUser });
+      return res.status(201).json(savedUser);
     } else {
       const encryptedPassword = await bcrypt.hash(password, 10);
 
@@ -78,10 +78,10 @@ export class UserController {
         name,
         email,
         password: encryptedPassword,
-        avatar: '',
-        adress: []
+        avatar: ''
       };
-      const savedUser: User = userRepository.create(newUser);
+
+      const savedUser: User = await userRepository.create(newUser);
       await userRepository.save(savedUser);
 
       //send email
@@ -95,9 +95,10 @@ export class UserController {
 
       send(`${name} <${email}>`, 'Thank You for Creating an Account', htmlMail);
 
-      return res.status(201).json({ ...newUser });
+      return res.status(201).json(savedUser);
     }
   }
+
   async show(req: Request, res: Response): Promise<Response<User>> {
     const { id } = req.params;
 
@@ -112,6 +113,7 @@ export class UserController {
     if (!user) {
       throw new NotFoundError(chat.error404);
     }
+
     return res.status(200).json(user);
   }
 
@@ -145,8 +147,8 @@ export class UserController {
     return res.status(200).json({ user: userData, token });
   }
 
-  async update(req: Request, res: Response): Promise<Response<User>> {
-    const { name, email, password, avatar, adress } = req.body;
+  async update(req: RequestWhitEntity, res: Response): Promise<Response<User>> {
+    const { name, email, password, avatar, address } = req.body;
     const { id } = req.params;
 
     if (!req.body || Object.keys(req.body).length === 0) {
@@ -166,7 +168,7 @@ export class UserController {
       email: email || user.email,
       password: password || user.password,
       avatar: avatar || user.avatar,
-      adress: adress || user.avatar
+      address: address || user.address
     };
 
     Object.assign(user, userData);
@@ -174,6 +176,7 @@ export class UserController {
     if (userId !== user.id) {
       throw new UnauthorizedError(chat.error401);
     }
+
     await userRepository.save(user);
 
     return res.status(200).json(user);
@@ -199,6 +202,7 @@ export class UserController {
     if (avatar) {
       await deleteImage(avatar, 'profiles/users');
     }
+
     if (user.id === req.user.id) {
       await userRepository.delete(user);
     } else {
@@ -206,5 +210,16 @@ export class UserController {
     }
 
     return res.status(203).json();
+  }
+
+  async create_order(_: Request, res: Response) {
+    const user = await userRepository.findOne({
+      where: { email: 'user1@email.com' },
+      relations: {
+        address: true
+      }
+    });
+
+    return res.json(user);
   }
 }

@@ -1,5 +1,5 @@
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
-import { Adress } from './Adress';
+import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Address } from './Address';
 
 @Entity('users')
 export class User {
@@ -18,6 +18,6 @@ export class User {
   @Column({ nullable: true })
   avatar: string;
 
-  @OneToMany(() => Adress, adress => adress)
-  adress: Adress[];
+  @OneToOne(() => Address, address => address.user, { nullable: true })
+  address?: Address;
 }
