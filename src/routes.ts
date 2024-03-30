@@ -14,13 +14,13 @@ routes.put('/employees', multer.single('profile_image'), employeeController.stor
 routes.post('/employees', employeeController.login);
 routes.get('/employees', loggedInEmployee, employeeController.index);
 routes.get('/employees/:id', employeeController.show);
-routes.put('/employees/:id', loggedInEmployee, employeeController.update);
+routes.put('/employees/:id', loggedInEmployee, multer.single('profile_image'), employeeController.update);
 routes.delete('/employees/:id', loggedInEmployee, employeeController.destroy);
 
 //users
 routes.put('/users', multer.single('profile_image'), userController.store);
 routes.post('/users', userController.login);
-routes.get('/users/:id', loggedInUser, userController.show);
+routes.get('/users/:id', loggedInUser, multer.single('profile_image'), userController.show);
 routes.put('/users/:id', loggedInUser, userController.update);
 routes.delete('/users/:id', loggedInUser, userController.destroy);
 
