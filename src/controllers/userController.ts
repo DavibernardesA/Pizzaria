@@ -147,7 +147,7 @@ export class UserController {
     return res.status(200).json({ user: userData, token });
   }
 
-  async update(req: RequestWhitEntity, res: Response): Promise<Response<User>> {
+  async update(req: RequestWhitEntity, res: Response): Promise<Response<void>> {
     const { name, email, password, avatar, address } = req.body;
     const { id } = req.params;
 
@@ -157,9 +157,13 @@ export class UserController {
 
     const userId: number = parseInt(id);
 
+    if (!id || isNaN(userId)) {
+      throw new InvalidFormatError(chat.error404);
+    }
+
     const user: User | null = await userRepository.findOne({ where: { id: userId } });
 
-    if (!id || !user) {
+    if (!user) {
       throw new NotFoundError(chat.error404);
     }
 
@@ -179,10 +183,10 @@ export class UserController {
 
     await userRepository.save(user);
 
-    return res.status(200).json(user);
+    return res.status(200).json();
   }
 
-  async destroy(req: RequestWhitEntity, res: Response): Promise<Response<any, Record<string, any>>> {
+  async destroy(req: RequestWhitEntity, res: Response): Promise<Response<void>> {
     const { id } = req.params;
 
     const userId: number = parseInt(id);

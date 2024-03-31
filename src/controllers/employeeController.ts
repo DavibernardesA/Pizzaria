@@ -14,7 +14,7 @@ import { RequestWhitEntity } from '../interfaces/RequestWhitEntity';
 import { LoginEmployee } from '../DTO/Login';
 
 export class EmployeeController {
-  async index(_: Request, res: Response): Promise<Response<any, Record<string, any>>> {
+  async index(_: Request, res: Response): Promise<Response<Employee[]>> {
     const employees: Employee[] = await employeeRepository.find();
 
     if (employees.length < 1) {
@@ -24,7 +24,7 @@ export class EmployeeController {
     return res.status(200).json(employees);
   }
 
-  async show(req: Request, res: Response): Promise<Response<any, Record<string, any>>> {
+  async show(req: Request, res: Response): Promise<Response<Employee>> {
     const { id } = req.params;
 
     const employeeId: number = parseInt(id);
@@ -129,8 +129,8 @@ export class EmployeeController {
     return res.status(200).json({ employee: employeeData, token });
   }
 
-  async update(req: Request, res: Response) {
-    const { name, email, password, avatar, adress } = req.body;
+  async update(req: Request, res: Response): Promise<Response<void>> {
+    const { name, email, password, avatar } = req.body;
     const { id } = req.params;
 
     if (!req.body || Object.keys(req.body).length === 0) {
@@ -139,7 +139,7 @@ export class EmployeeController {
 
     const employeeId: number = parseInt(id);
 
-    if (!id || !employeeId) {
+    if (!id || isNaN(employeeId)) {
       throw new BadRequestError(chat.error400);
     }
 
@@ -166,7 +166,7 @@ export class EmployeeController {
     return res.status(200).json(employee);
   }
 
-  async destroy(req: RequestWhitEntity, res: Response): Promise<Response<any, Record<string, any>>> {
+  async destroy(req: RequestWhitEntity, res: Response): Promise<Response<void>> {
     const { id } = req.params;
 
     const userId: number = parseInt(id);
