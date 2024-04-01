@@ -5,12 +5,15 @@ import { EmployeeController } from './controllers/employeeController';
 import { loggedInEmployee } from './middlewares/loggedInEmployee';
 import { loggedInUser } from './middlewares/loggedInUser';
 import { validateAdress } from './middlewares/validateAdress';
-import { ProductController } from './controllers/ProductController';
+import { ProductController } from './controllers/productController';
+import { AddressController } from './controllers/addressController';
 
 const routes: Router = Router();
+
 const userController: UserController = new UserController();
 const employeeController: EmployeeController = new EmployeeController();
 const productController: ProductController = new ProductController();
+const addressController: AddressController = new AddressController();
 
 //employees
 routes.post('/employees', multer.single('profile_image'), employeeController.store);
@@ -34,5 +37,10 @@ routes.get('/products/:id', productController.show);
 routes.post('/products', loggedInEmployee, productController.store);
 routes.put('/products/:id', loggedInEmployee, productController.update);
 routes.delete('/products/:id', loggedInEmployee, productController.destroy);
+
+//address
+routes.post('/address/:id', loggedInUser, addressController.store);
+routes.get('/address/:id', loggedInUser, addressController.show);
+routes.delete('/address/:id', loggedInUser, addressController.destroy);
 
 export default routes;
