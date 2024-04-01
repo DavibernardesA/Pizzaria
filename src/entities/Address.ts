@@ -27,7 +27,10 @@ export class Address {
   @Column()
   state: string;
 
+  @Column()
+  user_id: number;
+
   @OneToOne(() => User, user => user.address)
   @JoinColumn({ name: 'user_id' })
-  user: User;
+  user?: User;
 }
