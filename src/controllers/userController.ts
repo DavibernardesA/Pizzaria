@@ -95,7 +95,7 @@ export class UserController {
 
       send(`${name} <${email}>`, 'Thank You for Creating an Account', htmlMail);
 
-      return res.status(201).json(savedUser);
+      return res.status(201).json();
     }
   }
 
@@ -148,7 +148,7 @@ export class UserController {
   }
 
   async update(req: RequestWhitEntity, res: Response): Promise<Response<void>> {
-    const { name, email, password, avatar, address } = req.body;
+    const { name, email, password, avatar } = req.body;
     const { id } = req.params;
 
     if (!req.body || Object.keys(req.body).length === 0) {
@@ -171,8 +171,7 @@ export class UserController {
       name: name || user.name,
       email: email || user.email,
       password: password || user.password,
-      avatar: avatar || user.avatar,
-      address: address || user.address
+      avatar: avatar || user.avatar
     };
 
     Object.assign(user, userData);
@@ -216,7 +215,7 @@ export class UserController {
     return res.status(203).json();
   }
 
-  async create_order(req: Request, res: Response) {
+  async create_order(req: RequestWhitEntity, res: Response) {
     const { id } = req.params;
 
     const userId: number = parseInt(id);
@@ -225,12 +224,20 @@ export class UserController {
       throw new InvalidFormatError(chat.error400);
     }
 
-    const user = await userRepository.findOne({
+    const user: User | null = await userRepository.findOne({
       where: { id: userId },
       relations: {
         address: true
       }
     });
+
+    if (!user) {
+      throw new NotFoundError(chat.error404);
+    }
+
+    if (!user.address) {
+      throw new BadRequestError(chat.noAddress);
+    }
 
     return res.json(user);
   }

@@ -82,7 +82,7 @@ export class EmployeeController {
       const savedEmployee: Employee = employeeRepository.create(newEmployee);
       await employeeRepository.save(savedEmployee);
 
-      return res.status(201).json(savedEmployee);
+      return res.status(201).json();
     } else {
       const encryptedPassword = await bcrypt.hash(password, 10);
 
@@ -95,7 +95,7 @@ export class EmployeeController {
       const savedEmployee: Employee = employeeRepository.create(newEmployee);
       await employeeRepository.save(savedEmployee);
 
-      return res.status(201).json(savedEmployee);
+      return res.status(201).json();
     }
   }
 

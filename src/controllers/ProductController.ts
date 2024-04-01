@@ -49,7 +49,7 @@ export class ProductController {
     const SavedProduct: Product = await ProductRepository.create(newProduct);
     await ProductRepository.save(SavedProduct);
 
-    return res.status(201).json(newProduct);
+    return res.status(201).json();
   }
 
   async update(req: Request, res: Response): Promise<Response<void>> {
