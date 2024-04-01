@@ -216,9 +216,17 @@ export class UserController {
     return res.status(203).json();
   }
 
-  async create_order(_: Request, res: Response) {
+  async create_order(req: Request, res: Response) {
+    const { id } = req.params;
+
+    const userId: number = parseInt(id);
+
+    if (!id || isNaN(userId)) {
+      throw new InvalidFormatError(chat.error400);
+    }
+
     const user = await userRepository.findOne({
-      where: { email: 'user1@email.com' },
+      where: { id: userId },
       relations: {
         address: true
       }
