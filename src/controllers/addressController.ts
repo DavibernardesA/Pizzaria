@@ -5,10 +5,9 @@ import { userRepository } from '../repositories/userRepository';
 import { User } from '../entities/User';
 import { addressRepository } from '../repositories/addressRepository';
 import { Address } from '../entities/Address';
-import { RequestWhitEntity } from '../interfaces/RequestWhitEntity';
 
 export class AddressController {
-  async store(req: RequestWhitEntity, res: Response) {
+  async store(req: Request, res: Response) {
     const { id } = req.params;
     const { city, complement, house_number, neighborhood, password, state, street, zipcode } = req.body;
 
@@ -74,7 +73,7 @@ export class AddressController {
     return res.status(200).json(address);
   }
 
-  async destroy(req: RequestWhitEntity, res: Response) {
+  async destroy(req: Request, res: Response) {
     const { id } = req.params;
 
     const addressId: number = parseInt(id);

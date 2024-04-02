@@ -14,7 +14,6 @@ import Handlebars from 'handlebars';
 import { send } from '../utils/emailSender';
 import { LoginUser } from '../DTO/Login';
 import { envChecker } from '../utils/envChecker';
-import { RequestWhitEntity } from '../interfaces/RequestWhitEntity';
 
 export class UserController {
   async store(req: Request, res: Response): Promise<Response<User>> {
@@ -147,7 +146,7 @@ export class UserController {
     return res.status(200).json({ user: userData, token });
   }
 
-  async update(req: RequestWhitEntity, res: Response): Promise<Response<void>> {
+  async update(req: Request, res: Response): Promise<Response<void>> {
     const { name, email, password, avatar } = req.body;
     const { id } = req.params;
 
@@ -185,7 +184,7 @@ export class UserController {
     return res.status(200).json();
   }
 
-  async destroy(req: RequestWhitEntity, res: Response): Promise<Response<void>> {
+  async destroy(req: Request, res: Response): Promise<Response<void>> {
     const { id } = req.params;
 
     const userId: number = parseInt(id);
@@ -215,8 +214,9 @@ export class UserController {
     return res.status(203).json();
   }
 
-  async create_order(req: RequestWhitEntity, res: Response) {
+  async create_order(req: Request, res: Response) {
     const { id } = req.params;
+    const order = req.body.order;
 
     const userId: number = parseInt(id);
 
@@ -239,6 +239,8 @@ export class UserController {
       throw new BadRequestError(chat.noAddress);
     }
 
-    return res.json(user);
+    if (!order || order.length < 1) {
+      throw new InvalidFormatError(chat.error400);
+    }
   }
 }

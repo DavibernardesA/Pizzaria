@@ -1,4 +1,4 @@
-import { Response, NextFunction } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { UnauthorizedError } from '../helpers/api-error';
 import chat from '../chat/statusMessage';
 import jwt from 'jsonwebtoken';
@@ -6,9 +6,8 @@ import { JwtPayload } from 'jsonwebtoken';
 import { envChecker } from '../utils/envChecker';
 import { employeeRepository } from '../repositories/employeeRepository';
 import { Employee } from '../entities/Employee';
-import { RequestWhitEntity } from '../interfaces/RequestWhitEntity';
 
-export const loggedInEmployee = async (req: RequestWhitEntity, res: Response, next: NextFunction): Promise<void> => {
+export const loggedInEmployee = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   const { authorization } = req.headers;
 
   if (!authorization) {

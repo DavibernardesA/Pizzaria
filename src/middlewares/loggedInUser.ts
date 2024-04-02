@@ -6,9 +6,8 @@ import { JwtPayload } from 'jsonwebtoken';
 import { envChecker } from '../utils/envChecker';
 import { userRepository } from '../repositories/userRepository';
 import { User } from '../entities/User';
-import { RequestWhitEntity } from '../interfaces/RequestWhitEntity';
 
-export const loggedInUser = async (req: RequestWhitEntity, res: Response, next: NextFunction): Promise<void> => {
+export const loggedInUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   const { authorization } = req.headers;
 
   if (!authorization) {

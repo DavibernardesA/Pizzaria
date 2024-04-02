@@ -10,7 +10,6 @@ import jwt from 'jsonwebtoken';
 import deleteImage from '../services/deleteImage';
 import { userRepository } from '../repositories/userRepository';
 import { envChecker } from '../utils/envChecker';
-import { RequestWhitEntity } from '../interfaces/RequestWhitEntity';
 import { LoginEmployee } from '../DTO/Login';
 
 export class EmployeeController {
@@ -166,7 +165,7 @@ export class EmployeeController {
     return res.status(200).json(employee);
   }
 
-  async destroy(req: RequestWhitEntity, res: Response): Promise<Response<void>> {
+  async destroy(req: Request, res: Response): Promise<Response<void>> {
     const { id } = req.params;
 
     const userId: number = parseInt(id);
