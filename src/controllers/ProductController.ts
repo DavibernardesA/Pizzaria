@@ -5,6 +5,7 @@ import { ProductRepository } from '../repositories/productRepository';
 import { Request, Response } from 'express';
 import { fileUpload } from '../services/imageUpload';
 import { updateImage } from '../services/updateImage';
+import deleteImage from '../services/deleteImage';
 
 export class ProductController {
   async index(_: Request, res: Response): Promise<Response<Product[]>> {
@@ -142,6 +143,24 @@ export class ProductController {
 
     const productId: number = parseInt(id);
 
-    return res.status(200).json();
+    if (!id || isNaN(productId)) {
+      throw new InvalidFormatError(chat.error400);
+    }
+
+    const product: Product | null = await ProductRepository.findOne({ where: { id: productId } });
+
+    if (!product) {
+      throw new NotFoundError(chat.error404);
+    }
+
+    const avatar: string | undefined = product.avatar;
+
+    if (avatar) {
+      await deleteImage(avatar, 'products');
+    }
+
+    await ProductRepository.delete(product);
+
+    return res.status(203).json();
   }
 }
