@@ -16,6 +16,11 @@ export class Products1711225817391 implements MigrationInterface {
             type: 'text'
           },
           {
+            name: 'avatar',
+            type: 'text',
+            isNullable: true
+          },
+          {
             name: 'price',
             type: 'integer'
           },
@@ -50,4 +55,3 @@ export class Products1711225817391 implements MigrationInterface {
     await queryRunner.dropTable('products');
   }
 }
-

@@ -9,6 +9,9 @@ export class Product {
   @Column()
   name: string;
 
+  @Column({ nullable: true })
+  avatar: string;
+
   @Column()
   price: number;
 
