@@ -14,6 +14,8 @@ import Handlebars from 'handlebars';
 import { send } from '../utils/emailSender';
 import { LoginUser } from '../DTO/Login';
 import { envChecker } from '../utils/envChecker';
+import { updateImage } from '../services/updateImage';
+import { fileUpload } from '../services/imageUpload';
 
 export class UserController {
   async store(req: Request, res: Response): Promise<Response<User>> {
@@ -33,18 +35,7 @@ export class UserController {
 
     //file upload
     if (avatar) {
-      const Key: string = `profiles/users/${encodeURIComponent(name)}`;
-
-      await s3Client.send(
-        new PutObjectCommand({
-          Bucket: process.env.KEY_NAME_BUCKET!,
-          Key,
-          Body: avatar.buffer,
-          ContentType: avatar.mimetype
-        })
-      );
-
-      const s3URL: string = `http://${process.env.ENDPOINT_BUCKET}/${Key}`;
+      const newImage = await fileUpload(name, 'profiles/users', avatar);
 
       const encryptedPassword = await bcrypt.hash(password, 10);
 
@@ -52,7 +43,7 @@ export class UserController {
         name,
         email,
         password: encryptedPassword,
-        avatar: s3URL
+        avatar: newImage
       };
 
       const savedUser: User = await userRepository.create(newUser);
@@ -147,7 +138,8 @@ export class UserController {
   }
 
   async update(req: Request, res: Response): Promise<Response<void>> {
-    const { name, email, password, avatar } = req.body;
+    const { name, email, password } = req.body;
+    let avatar: Express.Multer.File | undefined = req.file;
     const { id } = req.params;
 
     if (!req.body || Object.keys(req.body).length === 0) {
@@ -166,11 +158,31 @@ export class UserController {
       throw new NotFoundError(chat.error404);
     }
 
+    if (avatar) {
+      const newImage = await updateImage(user, 'profiles/users', avatar);
+
+      const userData: Partial<User> = {
+        name: name || user.name,
+        email: email || user.email,
+        password: password || user.password,
+        avatar: newImage
+      };
+
+      Object.assign(user, userData);
+
+      if (userId !== user.id) {
+        throw new UnauthorizedError(chat.error401);
+      }
+
+      await userRepository.save(user);
+
+      return res.status(200).json();
+    }
+
     const userData: Partial<User> = {
       name: name || user.name,
       email: email || user.email,
-      password: password || user.password,
-      avatar: avatar || user.avatar
+      password: password || user.password
     };
 
     Object.assign(user, userData);
