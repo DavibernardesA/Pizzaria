@@ -16,6 +16,8 @@ import { LoginUser } from '../DTO/Login';
 import { envChecker } from '../utils/envChecker';
 import { updateImage } from '../services/updateImage';
 import { fileUpload } from '../services/imageUpload';
+import { productOrderRepository } from '../repositories/productOrderRepository';
+import { orderRepository } from '../repositories/orderRepository';
 
 export class UserController {
   async store(req: Request, res: Response): Promise<Response<User>> {
@@ -43,7 +45,8 @@ export class UserController {
         name,
         email,
         password: encryptedPassword,
-        avatar: newImage
+        avatar: newImage,
+        orders: []
       };
 
       const savedUser: User = await userRepository.create(newUser);
@@ -68,7 +71,8 @@ export class UserController {
         name,
         email,
         password: encryptedPassword,
-        avatar: ''
+        avatar: '',
+        orders: []
       };
 
       const savedUser: User = await userRepository.create(newUser);
@@ -227,32 +231,57 @@ export class UserController {
   }
 
   async create_order(req: Request, res: Response) {
+    const { observation, products } = req.body;
     const { id } = req.params;
-    const order = req.body.order;
 
-    const userId: number = parseInt(id);
+    const userId: number | undefined = parseInt(id);
 
-    if (!id || isNaN(userId)) {
+    if (!userId || isNaN(userId)) {
       throw new InvalidFormatError(chat.error400);
     }
 
-    const user: User | null = await userRepository.findOne({
-      where: { id: userId },
-      relations: {
-        address: true
-      }
-    });
+    const user = await userRepository.findOne({ where: { id: userId } });
 
     if (!user) {
       throw new NotFoundError(chat.error404);
     }
 
-    if (!user.address) {
-      throw new BadRequestError(chat.noAddress);
-    }
-
-    if (!order || order.length < 1) {
+    if (!observation || !products || !Array.isArray(products) || products.length === 0) {
       throw new InvalidFormatError(chat.error400);
     }
+
+    let totalValue = 0;
+
+    for (const product of products) {
+      if (!product.id || !product.quantity || !product.value) {
+        throw new InvalidFormatError(chat.error400);
+      }
+
+      const productOrder = productOrderRepository.create({
+        product_id: product.id,
+        quantity: product.quantity,
+        value: product.value
+      });
+
+      totalValue += product.quantity * product.value;
+
+      await productOrderRepository.save(productOrder);
+    }
+
+    const order = orderRepository.create({
+      observation,
+      total_value: totalValue,
+      user
+    });
+
+    await orderRepository.save(order);
+
+    const orderWithUser = await orderRepository
+      .createQueryBuilder('order')
+      .leftJoinAndSelect('order.user', 'user')
+      .where('order.id = :orderId', { orderId: order.id })
+      .getOne();
+
+    return res.status(201).json(orderWithUser);
   }
 }
