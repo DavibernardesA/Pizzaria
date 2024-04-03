@@ -9,7 +9,7 @@ import { Address } from '../entities/Address';
 export class AddressController {
   async store(req: Request, res: Response) {
     const { id } = req.params;
-    const { city, complement, house_number, neighborhood, password, state, street, zipcode } = req.body;
+    const { city, complement, house_number, neighborhood, state, street, zipcode } = req.body;
 
     const userId: number = parseInt(id);
 
@@ -50,7 +50,7 @@ export class AddressController {
     const savedAddress: Address = await addressRepository.create(newAddress);
     await addressRepository.save(savedAddress);
 
-    return res.status(200).json(newAddress);
+    return res.status(200).json(user);
   }
 
   async show(req: Request, res: Response) {

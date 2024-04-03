@@ -18,6 +18,10 @@ import { updateImage } from '../services/updateImage';
 import { fileUpload } from '../services/imageUpload';
 import { productOrderRepository } from '../repositories/productOrderRepository';
 import { orderRepository } from '../repositories/orderRepository';
+import { Product_order } from '../entities/Product_order';
+import { Order } from '../entities/Order';
+import { ProductRepository } from '../repositories/productRepository';
+import { Product } from '../entities/Product';
 
 export class UserController {
   async store(req: Request, res: Response): Promise<Response<User>> {
@@ -240,48 +244,59 @@ export class UserController {
       throw new InvalidFormatError(chat.error400);
     }
 
-    const user = await userRepository.findOne({ where: { id: userId } });
+    const user: User | null = await userRepository.findOne({ where: { id: userId } });
 
     if (!user) {
       throw new NotFoundError(chat.error404);
     }
 
-    if (!observation || !products || !Array.isArray(products) || products.length === 0) {
+    if (!products || !Array.isArray(products) || products.length === 0) {
       throw new InvalidFormatError(chat.error400);
     }
 
-    let totalValue = 0;
+    let totalValue: number = 0;
 
-    for (const product of products) {
-      if (!product.id || !product.quantity || !product.value) {
-        throw new InvalidFormatError(chat.error400);
-      }
-
-      const productOrder = productOrderRepository.create({
-        product_id: product.id,
-        quantity: product.quantity,
-        value: product.value
-      });
-
-      totalValue += product.quantity * product.value;
-
-      await productOrderRepository.save(productOrder);
-    }
-
-    const order = orderRepository.create({
-      observation,
-      total_value: totalValue,
+    const newOrder: Order = orderRepository.create({
+      observation: observation || '',
+      total_value: 0,
       user
     });
 
-    await orderRepository.save(order);
+    await orderRepository.save(newOrder);
 
-    const orderWithUser = await orderRepository
-      .createQueryBuilder('order')
-      .leftJoinAndSelect('order.user', 'user')
-      .where('order.id = :orderId', { orderId: order.id })
-      .getOne();
+    for (const product of products) {
+      if (!product.id || !product.quantity) {
+        throw new InvalidFormatError(chat.error400);
+      }
 
-    return res.status(201).json(orderWithUser);
+      const existingProduct: Product | null = await ProductRepository.findOne({ where: { id: product.id } });
+
+      if (!existingProduct) {
+        throw new NotFoundError(chat.error404);
+      }
+
+      totalValue += existingProduct.price;
+
+      const newProductOrder = productOrderRepository.create({
+        order_id: newOrder.id,
+        product_id: product.id,
+        quantity: product.quantity,
+        value: existingProduct.price * product.quantity
+      });
+
+      await productOrderRepository.save(newProductOrder);
+    }
+
+    const orderData: Partial<Order> = {
+      observation: newOrder.observation,
+      total_value: totalValue,
+      user: newOrder.user
+    };
+
+    Object.assign(newOrder, orderData);
+
+    await orderRepository.save(newOrder);
+
+    return res.status(201).json(products);
   }
 }
