@@ -5,7 +5,7 @@
 Hello! My name is Davi Bernardes do Nascimento and this is my first project with [TypeScript](https://www.typescriptlang.org/) using Object Oriented Programming.
 
 <div>
-      <img src="https://github.com/DavibernardesA/sistema-bancario-backend/assets/133716733/c4b82294-d9b5-497c-9000-995573c08afe" style="width: 30%; height: auto;">
+    <img src="https://github.com/DavibernardesA/sistema-bancario-backend/assets/133716733/c4b82294-d9b5-497c-9000-995573c08afe" style="width: 15%; height: auto;">
 </div>
 
 ## Technologies Used🛠️
