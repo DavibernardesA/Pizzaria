@@ -22,6 +22,9 @@ import { Product_order } from '../entities/Product_order';
 import { Order } from '../entities/Order';
 import { ProductRepository } from '../repositories/productRepository';
 import { Product } from '../entities/Product';
+import { axiosInstance } from '../services/api';
+import { createToken, demand } from '../services/stripe';
+import { Card, MoneyType } from '../@types/stripe';
 
 export class UserController {
   async store(req: Request, res: Response): Promise<Response<User>> {
@@ -235,7 +238,7 @@ export class UserController {
   }
 
   async create_order(req: Request, res: Response) {
-    const { observation, products } = req.body;
+    const { observation, products, card } = req.body;
     const { id } = req.params;
 
     const userId: number | undefined = parseInt(id);
@@ -256,10 +259,32 @@ export class UserController {
 
     let totalValue: number = 0;
 
+    for (const product of products) {
+      const existingProduct: Product | null = await ProductRepository.findOne({ where: { id: product.id } });
+
+      if (!existingProduct) {
+        throw new NotFoundError(chat.error404);
+      }
+
+      totalValue += existingProduct.price;
+    }
+
+    const validMoneyTypes: MoneyType[] = ['usd', 'brl', 'eur', 'gbp', 'jpy', 'cad', 'aud', 'chf', 'cny', 'inr', 'krw', 'mxn'];
+
+    const moneyType: MoneyType = envChecker(process.env.TYPE_CURRENCY) as MoneyType;
+
+    if (!validMoneyTypes.includes(moneyType)) {
+      throw new InvalidFormatError('Invalid currency type');
+    }
+
+    const cardToken = await createToken({ card } as Card);
+    const cardCharging = await demand(totalValue, moneyType, cardToken.id);
+
     const newOrder: Order = orderRepository.create({
       observation: observation || '',
       total_value: 0,
-      user
+      user,
+      charge_id: cardCharging.id
     });
 
     await orderRepository.save(newOrder);
@@ -274,8 +299,6 @@ export class UserController {
       if (!existingProduct) {
         throw new NotFoundError(chat.error404);
       }
-
-      totalValue += existingProduct.price;
 
       const newProductOrder = productOrderRepository.create({
         order_id: newOrder.id,

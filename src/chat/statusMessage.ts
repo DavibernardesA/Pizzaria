@@ -7,7 +7,8 @@ const chat = {
   error404: 'The server cannot find the requested resource.',
   error429: 'Request limit exceeded. Please try again later.',
   error500: 'Internal server error.',
-  noAddress: 'You need to have an address linked to your account to place an order.'
+  noAddress: 'You need to have an address linked to your account to place an order.',
+  errorCardCharging: 'Error when charging the card, please try again later.'
 };
 
 export default chat;

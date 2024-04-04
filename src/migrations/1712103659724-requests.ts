@@ -16,6 +16,10 @@ export class Requests1712103659724 implements MigrationInterface {
             type: 'integer'
           },
           {
+            name: 'charge_id',
+            type: 'text'
+          },
+          {
             name: 'observation',
             type: 'text',
             isNullable: true
@@ -33,4 +37,3 @@ export class Requests1712103659724 implements MigrationInterface {
     await queryRunner.dropTable('order');
   }
 }
-
