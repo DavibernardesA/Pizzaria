@@ -1,6 +1,6 @@
 import chat from '../chat/statusMessage';
 import { Product } from '../entities/Product';
-import { InvalidFormatError, NotFoundError, UnauthorizedError } from '../helpers/api-error';
+import { BadRequestError, InvalidFormatError, NotFoundError, UnauthorizedError } from '../helpers/api-error';
 import { ProductRepository } from '../repositories/productRepository';
 import { Request, Response } from 'express';
 import { fileUpload } from '../services/imageUpload';
@@ -36,29 +36,13 @@ export class ProductController {
 
   async store(req: Request, res: Response): Promise<Response<Product>> {
     const { name, price, description, stock, category_id } = req.body;
-    let avatar: Express.Multer.File | undefined = req.file;
+    const avatar: Express.Multer.File | undefined = req.file;
 
     if (!name || !price || !description || !stock || !category_id) {
-      throw new InvalidFormatError(chat.error400);
+      throw new BadRequestError(chat.error400);
     }
 
-    if (avatar) {
-      const newImage = await fileUpload(name, 'products', avatar);
-
-      const newProduct: Omit<Product, 'id'> = {
-        name,
-        price,
-        description,
-        stock,
-        category_id,
-        avatar: newImage
-      };
-
-      const SavedProduct: Product = await ProductRepository.create(newProduct);
-      await ProductRepository.save(SavedProduct);
-
-      return res.status(201).json();
-    }
+    const newImage: Express.Multer.File | string = avatar ? await fileUpload(name, 'products', avatar) : '';
 
     const newProduct: Omit<Product, 'id'> = {
       name,
@@ -66,28 +50,23 @@ export class ProductController {
       description,
       stock,
       category_id,
-      avatar: ''
+      avatar: newImage
     };
 
-    const SavedProduct: Product = await ProductRepository.create(newProduct);
-    await ProductRepository.save(SavedProduct);
+    const savedProduct: Product = await ProductRepository.create(newProduct);
+    await ProductRepository.save(savedProduct);
 
-    return res.status(201).json();
+    return res.status(201).json(savedProduct);
   }
 
   async update(req: Request, res: Response): Promise<Response<void>> {
     const { name, price, description, stock, category_id } = req.body;
-    let avatar: Express.Multer.File | undefined = req.file;
+    const avatar: Express.Multer.File | undefined = req.file;
     const { id } = req.params;
-
-    if (!req.body || Object.keys(req.body).length === 0) {
-      throw new InvalidFormatError(chat.error400);
-    }
-
     const productId: number = parseInt(id);
 
-    if (!id || isNaN(productId)) {
-      throw new InvalidFormatError(chat.error400);
+    if (!id || isNaN(productId) || !req.body || Object.keys(req.body).length === 0) {
+      throw new BadRequestError(chat.error400);
     }
 
     const product: Product | null = await ProductRepository.findOne({ where: { id: productId } });
@@ -96,27 +75,10 @@ export class ProductController {
       throw new NotFoundError(chat.error404);
     }
 
+    let newImage: string | undefined = product.avatar;
+
     if (avatar) {
-      const newImage = await updateImage(product, 'products', avatar);
-
-      const productData: Partial<Product> = {
-        name: name || product.name,
-        price: price || product.price,
-        description: description || product.description,
-        stock: stock || product.stock,
-        category_id: category_id || product.category_id,
-        avatar: newImage
-      };
-
-      Object.assign(product, productData);
-
-      if (productId !== product.id) {
-        throw new UnauthorizedError(chat.error401);
-      }
-
-      await ProductRepository.save(product);
-
-      return res.status(200).json();
+      newImage = await updateImage(product, 'products', avatar);
     }
 
     const productData: Partial<Product> = {
@@ -124,7 +86,8 @@ export class ProductController {
       price: price || product.price,
       description: description || product.description,
       stock: stock || product.stock,
-      category_id: category_id || product.category_id
+      category_id: category_id || product.category_id,
+      avatar: newImage
     };
 
     Object.assign(product, productData);

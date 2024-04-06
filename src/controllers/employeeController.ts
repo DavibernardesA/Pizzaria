@@ -11,6 +11,7 @@ import deleteImage from '../services/deleteImage';
 import { userRepository } from '../repositories/userRepository';
 import { envChecker } from '../utils/envChecker';
 import { LoginEmployee } from '../DTO/Login';
+import { fileUpload } from '../services/imageUpload';
 
 export class EmployeeController {
   async index(_: Request, res: Response): Promise<Response<Employee[]>> {
@@ -51,51 +52,29 @@ export class EmployeeController {
     const existingEmployee = await employeeRepository.findByEmail(email);
     const existingUser = await userRepository.findByEmail(email);
 
-    if (existingEmployee.length > 1 && existingUser.length > 1) {
+    if (existingEmployee.length > 0 || existingUser.length > 0) {
       throw new InvalidFormatError(chat.error400);
     }
 
+    const encryptedPassword = await bcrypt.hash(password, 10);
+
     //file upload
+    let newImage: Express.Multer.File | string = '';
     if (avatar) {
-      const Key = `profiles/employees${encodeURIComponent(name)}`;
-
-      await s3Client.send(
-        new PutObjectCommand({
-          Bucket: envChecker(process.env.KEY_NAME_BUCKET),
-          Key,
-          Body: avatar.buffer,
-          ContentType: avatar.mimetype
-        })
-      );
-
-      const s3URL: string = `http://${envChecker(process.env.ENDPOINT_BUCKET)}/${Key}`;
-
-      const encryptedPassword = await bcrypt.hash(password, 10);
-
-      const newEmployee: Omit<Employee, 'id'> = {
-        name,
-        email,
-        password: encryptedPassword,
-        avatar: s3URL
-      };
-      const savedEmployee: Employee = employeeRepository.create(newEmployee);
-      await employeeRepository.save(savedEmployee);
-
-      return res.status(201).json();
-    } else {
-      const encryptedPassword = await bcrypt.hash(password, 10);
-
-      const newEmployee: Omit<Employee, 'id'> = {
-        name,
-        email,
-        password: encryptedPassword,
-        avatar: ''
-      };
-      const savedEmployee: Employee = employeeRepository.create(newEmployee);
-      await employeeRepository.save(savedEmployee);
-
-      return res.status(201).json();
+      newImage = await fileUpload(name, 'profiles/employees', avatar);
     }
+
+    const newEmployee: Omit<Employee, 'id'> = {
+      name,
+      email,
+      password: encryptedPassword,
+      avatar: newImage
+    };
+
+    const savedEmployee: Employee = employeeRepository.create(newEmployee);
+    await employeeRepository.save(savedEmployee);
+
+    return res.status(201).json(savedEmployee);
   }
 
   async login(req: Request, res: Response): Promise<Response<LoginEmployee>> {

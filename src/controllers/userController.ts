@@ -3,8 +3,6 @@ import { userRepository } from '../repositories/userRepository';
 import { BadRequestError, InvalidFormatError, NotFoundError, UnauthorizedError } from '../helpers/api-error';
 import chat from '../chat/statusMessage';
 import { User } from '../entities/User';
-import { s3Client } from '../services/aws';
-import { PutObjectCommand } from '@aws-sdk/client-s3';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import deleteImage from '../services/deleteImage';
@@ -18,11 +16,9 @@ import { updateImage } from '../services/updateImage';
 import { fileUpload } from '../services/imageUpload';
 import { productOrderRepository } from '../repositories/productOrderRepository';
 import { orderRepository } from '../repositories/orderRepository';
-import { Product_order } from '../entities/Product_order';
 import { Order } from '../entities/Order';
 import { ProductRepository } from '../repositories/productRepository';
 import { Product } from '../entities/Product';
-import { axiosInstance } from '../services/api';
 import { createToken, demand } from '../services/stripe';
 import { Card, MoneyType } from '../@types/stripe';
 
@@ -42,62 +38,35 @@ export class UserController {
       throw new InvalidFormatError(chat.error400);
     }
 
+    const encryptedPassword = await bcrypt.hash(password, 10);
+
     //file upload
-    if (avatar) {
-      const newImage = await fileUpload(name, 'profiles/users', avatar);
+    let newImage: Express.Multer.File | string = '';
+    avatar ? (newImage = await fileUpload(name, 'profiles/users', avatar)) : (newImage = '');
 
-      const encryptedPassword = await bcrypt.hash(password, 10);
+    const newUser: Omit<User, 'id'> = {
+      name,
+      email,
+      password: encryptedPassword,
+      avatar: newImage,
+      orders: []
+    };
 
-      const newUser: Omit<User, 'id'> = {
-        name,
-        email,
-        password: encryptedPassword,
-        avatar: newImage,
-        orders: []
-      };
+    const savedUser: User = await userRepository.create(newUser);
+    await userRepository.save(savedUser);
 
-      const savedUser: User = await userRepository.create(newUser);
-      await userRepository.save(savedUser);
+    //send email
+    const file: Buffer = await fs.readFile('src/templates/registrationEmail.html');
 
-      //send email
-      const file: Buffer = await fs.readFile('src/templates/registrationEmail.html');
+    const compiler: HandlebarsTemplateDelegate<any> = Handlebars.compile(file.toString());
 
-      const compiler: HandlebarsTemplateDelegate<any> = Handlebars.compile(file.toString());
+    const htmlMail = compiler({
+      nameUser: name
+    });
 
-      const htmlMail = compiler({
-        nameUser: name
-      });
+    send(`${name} <${email}>`, 'Thank You for Creating an Account', htmlMail);
 
-      send(`${name} <${email}>`, 'Thank You for Creating an Account', htmlMail);
-
-      return res.status(201).json(savedUser);
-    } else {
-      const encryptedPassword = await bcrypt.hash(password, 10);
-
-      const newUser: Omit<User, 'id'> = {
-        name,
-        email,
-        password: encryptedPassword,
-        avatar: '',
-        orders: []
-      };
-
-      const savedUser: User = await userRepository.create(newUser);
-      await userRepository.save(savedUser);
-
-      //send email
-      const file: Buffer = await fs.readFile('src/templates/registrationEmail.html');
-
-      const compiler: HandlebarsTemplateDelegate<any> = Handlebars.compile(file.toString());
-
-      const htmlMail = compiler({
-        nameUser: name
-      });
-
-      send(`${name} <${email}>`, 'Thank You for Creating an Account', htmlMail);
-
-      return res.status(201).json();
-    }
+    return res.status(201).json();
   }
 
   async show(req: Request, res: Response): Promise<Response<User>> {
@@ -169,31 +138,14 @@ export class UserController {
       throw new NotFoundError(chat.error404);
     }
 
-    if (avatar) {
-      const newImage = await updateImage(user, 'profiles/users', avatar);
-
-      const userData: Partial<User> = {
-        name: name || user.name,
-        email: email || user.email,
-        password: password || user.password,
-        avatar: newImage
-      };
-
-      Object.assign(user, userData);
-
-      if (userId !== user.id) {
-        throw new UnauthorizedError(chat.error401);
-      }
-
-      await userRepository.save(user);
-
-      return res.status(200).json();
-    }
+    let newImage: string = '';
+    avatar ? (newImage = await updateImage(user, 'profiles/users', avatar)) : user.avatar;
 
     const userData: Partial<User> = {
       name: name || user.name,
       email: email || user.email,
-      password: password || user.password
+      password: password || user.password,
+      avatar: newImage
     };
 
     Object.assign(user, userData);
